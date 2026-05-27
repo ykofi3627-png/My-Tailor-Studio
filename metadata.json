@@ -1,0 +1,6 @@
+{
+  "name": "Tailor Studio",
+  "description": "An interactive digital tailoring application for fashion designers and seamstresses to model custom 2D patterns, select fabrics, adjust body dimensions, and visualize mockups before cutting fabric.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,49 @@
+{
+  "entities": {
+    "customer": {
+      "title": "Customer",
+      "description": "A tailor customer profile storing measurements.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "gender": { "type": "string", "enum": ["female", "male"] },
+        "measurements": {
+          "type": "object"
+        }
+      },
+      "required": ["id", "name", "phone", "email", "measurements"]
+    },
+    "project": {
+      "title": "DesignProject",
+      "description": "A customized tailoring design project.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "customerId": { "type": "string" },
+        "designName": { "type": "string" },
+        "fabric": { "type": "object" },
+        "styling": { "type": "object" },
+        "lastCalculations": { "type": "object" },
+        "aiSketchUrl": { "type": "string" },
+        "customerApprovalStatus": { "type": "string", "enum": ["Pending", "Approved", "Change-Requested"] },
+        "customerFeedback": { "type": "string" },
+        "comments": { "type": "array" },
+        "lastUpdated": { "type": "string" }
+      },
+      "required": ["id", "customerId", "designName", "fabric", "styling", "customerApprovalStatus", "lastUpdated"]
+    }
+  },
+  "firestore": {
+    "/customers/{customerId}": {
+      "schema": "customer",
+      "description": "Collection of tailor customers"
+    },
+    "/projects/{projectId}": {
+      "schema": "project",
+      "description": "Collection of design projects managed by the studio"
+    }
+  }
+}

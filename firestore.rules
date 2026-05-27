@@ -1,0 +1,79 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default catch-all denies everything
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isDesigner() {
+      return isSignedIn() && (
+        request.auth.token.email == 'ykofi3627@gmail.com' ||
+        request.auth.token.email.endsWith('@menswear.gh')
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    // Validation Blueprint for Customer
+    function isValidCustomer(data) {
+      return data.id is string && data.id.size() <= 128 && isValidId(data.id)
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 200
+        && data.phone is string && data.phone.size() <= 50
+        && data.email is string && data.email.size() <= 128
+        && (data.gender == null || data.gender == "female" || data.gender == "male")
+        && data.measurements is map
+        && data.measurements.unit in ["inches", "cm"]
+        && data.measurements.chest is number && data.measurements.chest >= 0
+        && data.measurements.waist is number && data.measurements.waist >= 0
+        && data.measurements.hips is number && data.measurements.hips >= 0
+        && data.measurements.height is number && data.measurements.height >= 0;
+    }
+
+    // Validation Blueprint for Project
+    function isValidProject(data) {
+      return data.id is string && data.id.size() <= 128 && isValidId(data.id)
+        && data.customerId is string && data.customerId.size() <= 128
+        && data.designName is string && data.designName.size() > 0 && data.designName.size() <= 250
+        && data.fabric is map
+        && data.styling is map
+        && data.customerApprovalStatus in ["Pending", "Approved", "Change-Requested"]
+        && data.lastUpdated is string;
+    }
+
+    match /customers/{customerId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn() && (isDesigner() || resource.data.email == request.auth.token.email);
+      allow create: if isSignedIn() && isValidId(customerId) && isValidCustomer(incoming()) 
+                     && (isDesigner() || incoming().email == request.auth.token.email);
+      allow update: if isSignedIn() && isValidId(customerId) && isValidCustomer(incoming())
+                     && (isDesigner() || resource.data.email == request.auth.token.email)
+                     && incoming().email == resource.data.email; // Immune field
+      allow delete: if isDesigner();
+    }
+
+    match /projects/{projectId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn() && (isDesigner() || resource.data.customerId == request.auth.uid);
+      allow create: if isSignedIn() && isValidId(projectId) && isValidProject(incoming()) && isDesigner();
+      allow update: if isSignedIn() && isValidId(projectId) && isValidProject(incoming())
+                     && (
+                       isDesigner() || 
+                       (resource.data.customerId == request.auth.uid && incoming().diff(resource.data).affectedKeys().hasOnly(['customerApprovalStatus', 'customerFeedback', 'comments', 'lastUpdated']))
+                     );
+      allow delete: if isDesigner();
+    }
+  }
+}
